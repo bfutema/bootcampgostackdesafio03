@@ -8,9 +8,9 @@ class StudentController {
     const schema = Yup.object().shape({
       name: Yup.string().required(),
       email: Yup.string().required(),
-      age: Yup.required(),
-      weight: Yup.required(),
-      height: Yup.required(),
+      age: Yup.number().required(),
+      weight: Yup.number().required(),
+      height: Yup.number().required(),
     });
 
     if (!(await schema.isValid(req.body))) {
@@ -37,22 +37,15 @@ class StudentController {
         .json({ error: 'Este estudante já foi cadastrado!' });
     }
 
-    const { id, name, age, weight, height } = await Student.create(req.body);
+    const student = await Student.create(req.body);
 
-    return res.json({
-      id,
-      name,
-      email,
-      age,
-      weight,
-      height,
-    });
+    return res.json(student);
   }
 
   async update(req, res) {
     const schema = Yup.object().shape({
       name: Yup.string(),
-      email: Yup.email().string(),
+      email: Yup.string().email(),
     });
 
     if (!(await schema.isValid(req.body))) {
@@ -79,7 +72,9 @@ class StudentController {
         .json({ error: 'Este aluno ainda não foi cadastrado!' });
     }
 
-    const { id, name, age, weight, height } = await Student.update(req.body);
+    const { id, name, age, weight, height } = await studentExists.update(
+      req.body
+    );
 
     return res.json({
       id,
