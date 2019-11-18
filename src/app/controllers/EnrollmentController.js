@@ -112,11 +112,56 @@ class EnrollmentController {
   }
 
   async update(req, res) {
+    const schema = Yup.object().shape({
+      start_date: Yup.date(),
+      plan_id: Yup.number(),
+    });
+
+    if (!(await schema.isValid(req.body))) {
+      return res
+        .status(400)
+        .json({ error: 'Falha na validação, verifique seus dados!' });
+    }
+
     return res.json({ message: 'Rota de atualização' });
   }
 
   async delete(req, res) {
-    return res.json({ message: 'Rota de remoção' });
+    const enrollment = await Enrollment.findByPk(req.params.id, {
+      include: [
+        {
+          model: Student,
+          as: 'student',
+          attributes: ['name', 'email'],
+        },
+        {
+          model: Plan,
+          as: 'plan',
+          attributes: ['title', 'duration', 'price'],
+        },
+      ],
+      attributes: ['id', 'start_date', 'end_date', 'price', 'cancelled_at'],
+    });
+
+    const user = await User.findByPk(req.userId);
+
+    if (!user.administrator) {
+      return res.status(401).json({
+        error: 'Apenas administradores podem cancelar uma matrícula.',
+      });
+    }
+
+    if (enrollment.cancelled_at !== null) {
+      return res
+        .status(401)
+        .json({ error: 'Essa matrícula já foi cancelada!' });
+    }
+
+    enrollment.cancelled_at = new Date();
+
+    await enrollment.save();
+
+    return res.json(enrollment);
   }
 }
 
